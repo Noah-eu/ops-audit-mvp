@@ -477,6 +477,64 @@
   color: var(--danger-strong);
 }
 
+.instruction-results-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.instruction-check-card {
+  display: grid;
+  gap: 12px;
+}
+
+.instruction-check-section {
+  display: grid;
+  gap: 8px;
+}
+
+.instruction-check-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.instruction-check-heading h4 {
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.instruction-check-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.instruction-severity {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.instruction-severity--critical {
+  color: var(--danger-strong);
+  background: rgba(198, 74, 74, 0.14);
+}
+
+.instruction-severity--recommended {
+  color: #7c5313;
+  background: rgba(227, 181, 89, 0.22);
+}
+
+.instruction-severity--check {
+  color: var(--text-strong);
+  background: rgba(53, 78, 89, 0.08);
+}
+
 @media (min-width: 720px) {
   .app-shell {
     padding-top: 28px;

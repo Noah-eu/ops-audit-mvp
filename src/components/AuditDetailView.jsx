@@ -13,6 +13,12 @@ import {
     groupItemsBySection,
     normalizeAuditRecord,
 } from '../lib/auditUtils.js'
+import {
+    getInstructionNoteContent,
+    isInstructionNoteField,
+    normalizeInstructionNoteValue,
+    runInstructionChecksForAudit,
+} from '../lib/instructionChecks.js'
 
 function StatusPill({ tone, children }) {
     return <span className={`status-pill status-pill--${tone}`}>{children}</span>
@@ -167,6 +173,36 @@ function SummaryList({ items, emptyText }) {
     )
 }
 
+function InstructionMessageList({ items, emptyText }) {
+    if (items.length === 0) {
+        return <p className="muted">{emptyText}</p>
+    }
+
+    return (
+        <ul className="instruction-check-list">
+            {items.map((item) => (
+                <li key={item.code ?? item.phrase ?? item.message}>{item.message}</li>
+            ))}
+        </ul>
+    )
+}
+
+function InstructionFactsList({ facts }) {
+    if (facts.length === 0) {
+        return <p className="muted">V textu zatím nebyly rozpoznané konkrétní údaje.</p>
+    }
+
+    return (
+        <ul className="instruction-check-list">
+            {facts.map((fact) => (
+                <li key={fact.type}>
+                    <strong>{fact.label}:</strong> {fact.values.join(', ')}
+                </li>
+            ))}
+        </ul>
+    )
+}
+
 export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) {
     const [audit, setAudit] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -175,6 +211,7 @@ export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) 
     const [filterValue, setFilterValue] = useState('all')
     const [saveState, setSaveState] = useState('idle')
     const [lastSavedAt, setLastSavedAt] = useState('')
+    const [instructionCheckRequested, setInstructionCheckRequested] = useState(false)
     const initialLoadRef = useRef(true)
     const skipAutosaveRef = useRef(false)
 
@@ -262,6 +299,10 @@ export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) 
         () => groupItemsBySection(audit?.items ?? [], filterValue),
         [audit?.items, filterValue],
     )
+    const instructionCheckResults = useMemo(
+        () => runInstructionChecksForAudit(audit?.notes),
+        [audit?.notes],
+    )
 
     function updateAudit(mutator) {
         setAudit((currentAudit) => {
@@ -341,7 +382,9 @@ export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) 
             ...currentAudit,
             notes: {
                 ...currentAudit.notes,
-                [fieldName]: value,
+                [fieldName]: isInstructionNoteField(fieldName)
+                    ? normalizeInstructionNoteValue(value, currentAudit.notes[fieldName]?.context)
+                    : value,
             },
         }))
     }
@@ -555,7 +598,7 @@ export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) 
                         <label htmlFor="checkinInstructions">Check-in instrukce</label>
                         <textarea
                             id="checkinInstructions"
-                            value={audit.notes.checkinInstructions}
+                            value={getInstructionNoteContent(audit.notes, 'checkinInstructions')}
                             onChange={(event) => updateNotes('checkinInstructions', event.target.value)}
                             placeholder="Vlož nebo napiš check-in instrukce."
                         />
@@ -565,7 +608,7 @@ export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) 
                         <label htmlFor="houseManual">House manuál</label>
                         <textarea
                             id="houseManual"
-                            value={audit.notes.houseManual}
+                            value={getInstructionNoteContent(audit.notes, 'houseManual')}
                             onChange={(event) => updateNotes('houseManual', event.target.value)}
                             placeholder="Poznámky k house manuálu a informacím pro hosta."
                         />
@@ -575,7 +618,7 @@ export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) 
                         <label htmlFor="internalCleaningInstructions">Interní instrukce úklidu</label>
                         <textarea
                             id="internalCleaningInstructions"
-                            value={audit.notes.internalCleaningInstructions}
+                            value={getInstructionNoteContent(audit.notes, 'internalCleaningInstructions')}
                             onChange={(event) => updateNotes('internalCleaningInstructions', event.target.value)}
                             placeholder="Co má úklid vědět nebo dodržet navíc."
                         />
@@ -585,11 +628,81 @@ export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) 
                         <label htmlFor="extraNotes">Další poznámky</label>
                         <textarea
                             id="extraNotes"
-                            value={audit.notes.extraNotes}
+                            value={getInstructionNoteContent(audit.notes, 'extraNotes')}
                             onChange={(event) => updateNotes('extraNotes', event.target.value)}
                             placeholder="Volné poznámky ke kontrole."
                         />
                     </div>
+
+                    <div className="form-actions">
+                        <button
+                            className="button"
+                            type="button"
+                            onClick={() => setInstructionCheckRequested(true)}
+                        >
+                            Zkontrolovat instrukce
+                        </button>
+                    </div>
+
+                    {instructionCheckRequested ? (
+                        <div className="instruction-results-grid">
+                            {instructionCheckResults.map(({ field, label, result }) => (
+                                <article key={field} className="panel instruction-check-card">
+                                    <div className="instruction-check-heading">
+                                        <h4>{label}</h4>
+                                        <div className="pill-row">
+                                            <span className="instruction-severity instruction-severity--critical">
+                                                Kritické: {result.summaryCounts.critical}
+                                            </span>
+                                            <span className="instruction-severity instruction-severity--recommended">
+                                                Doplnit: {result.summaryCounts.recommended}
+                                            </span>
+                                            <span className="instruction-severity instruction-severity--check">
+                                                Zkontrolovat: {result.summaryCounts.check}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="instruction-check-section">
+                                        <strong>Chybí</strong>
+                                        <InstructionMessageList
+                                            items={result.missingItems}
+                                            emptyText="Žádný kritický nedostatek nebyl nalezen."
+                                        />
+                                    </div>
+
+                                    <div className="instruction-check-section">
+                                        <strong>Doporučeno doplnit</strong>
+                                        <InstructionMessageList
+                                            items={result.recommendedItems}
+                                            emptyText="Žádné doplnění není aktuálně doporučené."
+                                        />
+                                    </div>
+
+                                    <div className="instruction-check-section">
+                                        <strong>Nejasné formulace</strong>
+                                        <InstructionMessageList
+                                            items={result.unclearPhrases}
+                                            emptyText="Text nepůsobí nejasně podle základních pravidel."
+                                        />
+                                    </div>
+
+                                    <div className="instruction-check-section">
+                                        <strong>Nalezené údaje</strong>
+                                        <InstructionFactsList facts={result.detectedFacts} />
+                                    </div>
+
+                                    <div className="instruction-check-section">
+                                        <strong>Možné rozpory</strong>
+                                        <InstructionMessageList
+                                            items={result.possibleConflicts}
+                                            emptyText="Nebyl nalezen zjevný konflikt v časech nebo instrukcích."
+                                        />
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    ) : null}
                 </section>
             ) : null}
 

@@ -2,6 +2,7 @@ import {
     getInspectionTypeLabel,
     normalizeInspectionTypeKey,
 } from '../data/checklistTemplates.js'
+import { createDefaultAuditNotes, normalizeAuditNotes } from './instructionChecks.js'
 
 const STATUS_LABELS = {
     good: 'Dobré',
@@ -76,13 +77,7 @@ export function buildAuditFromTemplate(formValues, template) {
         status: 'draft',
         createdAt: now,
         updatedAt: now,
-        notes: {
-            checkinInstructions: '',
-            houseManual: '',
-            internalCleaningInstructions: '',
-            extraNotes: '',
-            recommendedSteps: '',
-        },
+        notes: createDefaultAuditNotes(),
         items: template.sections.flatMap((section) =>
             section.items.map((item) => ({
                 id: crypto.randomUUID(),
@@ -114,8 +109,11 @@ export function normalizeAuditRecord(audit) {
     }
 
     const inspectionType = getInspectionTypeLabel(inspectionTypeKey)
+    const normalizedNotes = normalizeAuditNotes(audit.notes)
     const changed =
-        audit.inspectionTypeKey !== inspectionTypeKey || audit.inspectionType !== inspectionType
+        audit.inspectionTypeKey !== inspectionTypeKey ||
+        audit.inspectionType !== inspectionType ||
+        JSON.stringify(audit.notes ?? {}) !== JSON.stringify(normalizedNotes)
 
     if (!changed) {
         return audit
@@ -125,6 +123,7 @@ export function normalizeAuditRecord(audit) {
         ...audit,
         inspectionTypeKey,
         inspectionType,
+        notes: normalizedNotes,
     }
 }
 

@@ -29,6 +29,8 @@ describe('auditUtils', () => {
         expect(audit.status).toBe('draft')
         expect(audit.inspectionTypeKey).toBe('apartment_room')
         expect(audit.inspectionType).toBe('Apartmán / pokoj')
+        expect(audit.notes.checkinInstructions.context).toBe('arrival_instructions')
+        expect(audit.notes.checkinInstructions.content).toBe('')
         expect(audit.items.length).toBeGreaterThan(0)
         expect(audit.items[0].sectionTitle).toBeTruthy()
         expect(audit.items[0].photos).toEqual([])
@@ -73,9 +75,13 @@ describe('auditUtils', () => {
             id: 1,
             inspectionType: 'Firma / proces',
             status: 'draft',
+            notes: {
+                checkinInstructions: 'Příjezd po 15:00',
+            },
         })
 
         expect(normalizedAudit.inspectionTypeKey).toBe('company_process')
         expect(getAuditInspectionTypeLabel(normalizedAudit)).toBe('Firma / proces')
+        expect(normalizedAudit.notes.checkinInstructions.context).toBe('arrival_instructions')
     })
 })
