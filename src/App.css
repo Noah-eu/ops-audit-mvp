@@ -19,6 +19,7 @@
 .item-card,
 .summary-card,
 .empty-state,
+.info-panel,
 .meta-panel,
 .section-card,
 .photo-card {
@@ -483,6 +484,14 @@
 
 .empty-state {
   text-align: center;
+}
+
+.info-panel {
+  padding: 18px;
+}
+
+.hidden-input {
+  display: none;
 }
 
 .loading-state,

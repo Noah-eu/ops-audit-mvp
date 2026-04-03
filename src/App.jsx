@@ -5,6 +5,10 @@ import NewAuditForm from './components/NewAuditForm.jsx'
 import AuditDetailView from './components/AuditDetailView.jsx'
 import { db, ensureSeedTemplates } from './db.js'
 import {
+  exportAllAuditsToJsonFile,
+  parseAuditTransferJson,
+} from './lib/auditTransfer.js'
+import {
   buildAuditFromTemplate,
   normalizeAuditRecord,
   normalizeTemplateRecord,
@@ -49,7 +53,7 @@ function App() {
         }
       } catch {
         if (!cancelled) {
-          setError('Nepodařilo se načíst lokální data aplikace.')
+          setError('Nepodařilo se otevřít lokální úložiště v tomto prohlížeči. Zkus jiný browser nebo zkontroluj, zda IndexedDB není blokovaná.')
         }
       } finally {
         if (!cancelled) {
@@ -117,6 +121,25 @@ function App() {
     setSelectedAuditId(null)
   }
 
+  async function handleImportAudits(file) {
+    const jsonText = await file.text()
+    const importedAudits = await parseAuditTransferJson(jsonText)
+    const savedAudits = []
+
+    for (const importedAudit of importedAudits) {
+      const newId = await db.audits.add(importedAudit)
+      savedAudits.push({ ...importedAudit, id: newId })
+    }
+
+    setAudits((currentAudits) => sortAuditsByUpdatedAt([...savedAudits, ...currentAudits]))
+
+    return savedAudits.length
+  }
+
+  async function handleExportAllAudits() {
+    await exportAllAuditsToJsonFile(audits)
+  }
+
   return (
     <main className="app-shell">
       {view === 'dashboard' ? (
@@ -127,6 +150,8 @@ function App() {
           templates={templates}
           onCreateNew={() => setView('new')}
           onDeleteAudit={handleDeleteAudit}
+          onExportAllAudits={handleExportAllAudits}
+          onImportAudits={handleImportAudits}
           onOpenAudit={handleOpenAudit}
         />
       ) : null}

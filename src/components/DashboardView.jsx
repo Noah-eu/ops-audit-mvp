@@ -1,9 +1,11 @@
+import { useRef, useState } from 'react'
 import {
     countTemplateItems,
     formatDisplayDate,
     getAuditInspectionTypeLabel,
     getCriticalCount,
 } from '../lib/auditUtils.js'
+import { getJsonPhotoExportLimitations } from '../lib/auditTransfer.js'
 
 function StatusPill({ tone, children }) {
     return <span className={`status-pill status-pill--${tone}`}>{children}</span>
@@ -104,10 +106,50 @@ export default function DashboardView({
     templates,
     onCreateNew,
     onDeleteAudit,
+    onExportAllAudits,
+    onImportAudits,
     onOpenAudit,
 }) {
+    const [transferFeedback, setTransferFeedback] = useState('')
+    const [transferError, setTransferError] = useState('')
+    const importInputRef = useRef(null)
     const draftAudits = audits.filter((audit) => audit.status !== 'done')
     const finishedAudits = audits.filter((audit) => audit.status === 'done')
+    const isCompletelyEmpty = !loading && !error && audits.length === 0
+
+    async function handleImportSelection(event) {
+        const selectedFile = event.target.files?.[0]
+
+        if (!selectedFile) {
+            return
+        }
+
+        try {
+            setTransferError('')
+            const importedCount = await onImportAudits(selectedFile)
+            setTransferFeedback(
+                importedCount === 1
+                    ? 'JSON import proběhl a rozbor je uložený jako nový záznam.'
+                    : `JSON import proběhl a bylo uloženo ${importedCount} rozborů jako nové záznamy.`,
+            )
+        } catch (importError) {
+            setTransferFeedback('')
+            setTransferError(importError.message || 'Import JSON selhal.')
+        } finally {
+            event.target.value = ''
+        }
+    }
+
+    async function handleExportAll() {
+        try {
+            setTransferError('')
+            await onExportAllAudits()
+            setTransferFeedback('JSON export všech rozborů byl připraven ke stažení.')
+        } catch (exportError) {
+            setTransferFeedback('')
+            setTransferError(exportError.message || 'Export všech rozborů selhal.')
+        }
+    }
 
     return (
         <section className="screen">
@@ -128,6 +170,41 @@ export default function DashboardView({
                 </div>
             </header>
 
+            <section className="panel info-panel">
+                <div className="stack">
+                    <div>
+                        <h2>Local-first uložení</h2>
+                        <p>
+                            Rozbory jsou uložené jen v tomto zařízení a prohlížeči. Pro přenos mezi
+                            zařízeními použij export/import.
+                        </p>
+                        <p className="muted">{getJsonPhotoExportLimitations()}</p>
+                    </div>
+                    <div className="card-actions">
+                        <button className="ghost-button" type="button" onClick={() => importInputRef.current?.click()}>
+                            Import JSON
+                        </button>
+                        <button
+                            className="ghost-button"
+                            type="button"
+                            disabled={audits.length === 0}
+                            onClick={handleExportAll}
+                        >
+                            Export všech rozborů do JSON
+                        </button>
+                    </div>
+                    <input
+                        ref={importInputRef}
+                        className="hidden-input"
+                        accept="application/json,.json"
+                        onChange={handleImportSelection}
+                        type="file"
+                    />
+                    {transferFeedback ? <p>{transferFeedback}</p> : null}
+                    {transferError ? <p className="error-text">{transferError}</p> : null}
+                </div>
+            </section>
+
             {loading ? (
                 <section className="empty-state loading-state">
                     <h2>Načítám lokální data</h2>
@@ -142,7 +219,19 @@ export default function DashboardView({
                 </section>
             ) : null}
 
-            {!loading && !error ? (
+            {isCompletelyEmpty ? (
+                <section className="empty-state panel">
+                    <h2>Zatím tu nejsou žádné rozbory</h2>
+                    <p>Začni novým rozborem nebo si přenes data přes JSON import.</p>
+                    <div className="card-actions">
+                        <button className="button" type="button" onClick={onCreateNew}>
+                            Nový rozbor
+                        </button>
+                    </div>
+                </section>
+            ) : null}
+
+            {!loading && !error && audits.length > 0 ? (
                 <div className="dashboard-groups">
                     <AuditSection
                         audits={draftAudits}

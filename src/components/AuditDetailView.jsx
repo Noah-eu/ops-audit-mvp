@@ -27,6 +27,8 @@ import {
     normalizeInstructionNoteValue,
     runInstructionChecksForAudit,
 } from '../lib/instructionChecks.js'
+import { exportAuditToJsonFile } from '../lib/auditTransfer.js'
+import { exportAuditSummaryPdf } from '../lib/reportExport.js'
 
 function StatusPill({ tone, children }) {
     return <span className={`status-pill status-pill--${tone}`}>{children}</span>
@@ -531,6 +533,24 @@ export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) 
         return persistAudit(audit, 'Ruční uložení selhalo.')
     }
 
+    async function handleExportAuditJson() {
+        try {
+            setError('')
+            await exportAuditToJsonFile(audit)
+        } catch {
+            setError('JSON export rozboru selhal.')
+        }
+    }
+
+    async function handleExportPdf() {
+        try {
+            setError('')
+            await exportAuditSummaryPdf(audit)
+        } catch {
+            setError('PDF export shrnutí selhal.')
+        }
+    }
+
     async function handleBack() {
         const saved = await saveImmediately()
 
@@ -954,6 +974,12 @@ export default function AuditDetailView({ auditId, onBack, onDelete, onSaved }) 
                             </div>
 
                             <div className="form-actions">
+                                <button className="ghost-button" type="button" onClick={handleExportAuditJson}>
+                                    Export tohoto rozboru do JSON
+                                </button>
+                                <button className="ghost-button" type="button" onClick={handleExportPdf}>
+                                    Export do PDF
+                                </button>
                                 <button className="button" type="button" onClick={toggleCompletionStatus}>
                                     {audit.status === 'done'
                                         ? 'Vrátit mezi rozpracované rozbory'
