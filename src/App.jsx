@@ -6,6 +6,8 @@ import AuditDetailView from './components/AuditDetailView.jsx'
 import { db, ensureSeedTemplates } from './db.js'
 import {
   buildAuditFromTemplate,
+  normalizeAuditRecord,
+  normalizeTemplateRecord,
   sortAuditsByUpdatedAt,
 } from './lib/auditUtils.js'
 
@@ -32,9 +34,22 @@ function App() {
           db.templates.toArray(),
         ])
 
+        const normalizedAudits = auditRows.map((audit) => normalizeAuditRecord(audit))
+        const normalizedTemplates = templateRows.map((template) => normalizeTemplateRecord(template))
+
+        const changedAudits = normalizedAudits.filter(
+          (audit, index) =>
+            audit.inspectionTypeKey !== auditRows[index]?.inspectionTypeKey ||
+            audit.inspectionType !== auditRows[index]?.inspectionType,
+        )
+
+        if (changedAudits.length > 0) {
+          await db.audits.bulkPut(changedAudits)
+        }
+
         if (!cancelled) {
-          setAudits(sortAuditsByUpdatedAt(auditRows))
-          setTemplates(templateRows)
+          setAudits(sortAuditsByUpdatedAt(normalizedAudits))
+          setTemplates(normalizedTemplates)
         }
       } catch {
         if (!cancelled) {
@@ -56,7 +71,7 @@ function App() {
 
   async function handleCreateAudit(formValues) {
     const template = templates.find(
-      (templateOption) => templateOption.type === formValues.inspectionType,
+      (templateOption) => templateOption.key === formValues.inspectionTypeKey,
     )
 
     if (!template) {
