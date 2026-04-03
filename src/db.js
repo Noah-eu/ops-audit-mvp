@@ -27,6 +27,19 @@ class OpsAuditDatabase extends Dexie {
             await templatesTable.clear()
             await templatesTable.bulkPut(CHECKLIST_TEMPLATES)
         })
+
+        this.version(3).stores({
+            audits: '++id, status, inspectionTypeKey, updatedAt, date',
+            templates: '&id, key',
+        }).upgrade(async (transaction) => {
+            const auditsTable = transaction.table('audits')
+            const existingAudits = await auditsTable.toArray()
+            const migratedAudits = existingAudits.map((audit) => normalizeAuditRecord(audit))
+
+            if (migratedAudits.length > 0) {
+                await auditsTable.bulkPut(migratedAudits)
+            }
+        })
     }
 }
 

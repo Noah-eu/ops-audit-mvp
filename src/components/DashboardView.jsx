@@ -13,7 +13,7 @@ function AuditCard({ audit, onDeleteAudit, onOpenAudit }) {
     const criticalCount = getCriticalCount(audit.items)
 
     async function handleDelete() {
-        const confirmed = window.confirm('Smazat tuto kontrolu? Tato akce nejde vrátit.')
+        const confirmed = window.confirm('Smazat tento rozbor? Tato akce nejde vrátit.')
 
         if (confirmed) {
             await onDeleteAudit(audit.id)
@@ -28,7 +28,7 @@ function AuditCard({ audit, onDeleteAudit, onOpenAudit }) {
                     <p>{audit.location}</p>
                 </div>
                 <StatusPill tone={audit.status === 'done' ? 'done' : 'draft'}>
-                    {audit.status === 'done' ? 'Hotovo' : 'Rozpracováno'}
+                    {audit.status === 'done' ? 'Uzavřeno' : 'Rozpracováno'}
                 </StatusPill>
             </div>
 
@@ -40,7 +40,7 @@ function AuditCard({ audit, onDeleteAudit, onOpenAudit }) {
 
             <div className="card-actions">
                 <button className="button" type="button" onClick={() => onOpenAudit(audit.id)}>
-                    Otevřít kontrolu
+                    Otevřít rozbor
                 </button>
                 <button className="ghost-button" type="button" onClick={handleDelete}>
                     Smazat
@@ -114,15 +114,15 @@ export default function DashboardView({
             <header className="hero-panel">
                 <div className="stack">
                     <div>
-                        <h1>Provozní kontrola</h1>
+                        <h1>Jednorázový provozní rozbor</h1>
                         <p>
-                            Interní přehled pro rychlé založení kontroly, sběr nálezů, fotek a priorit bez
-                            backendu.
+                            Interní nástroj pro rychlý sběr nálezů, fotek, dopadů a doporučení pro vedení,
+                            čistě lokálně bez backendu.
                         </p>
                     </div>
                     <div className="hero-actions">
                         <button className="button" type="button" onClick={onCreateNew}>
-                            Nová kontrola
+                            Nový rozbor
                         </button>
                     </div>
                 </div>
@@ -131,7 +131,7 @@ export default function DashboardView({
             {loading ? (
                 <section className="empty-state loading-state">
                     <h2>Načítám lokální data</h2>
-                    <p>Kontroly a šablony připravuji z IndexedDB.</p>
+                    <p>Rozbory a šablony připravuji z IndexedDB.</p>
                 </section>
             ) : null}
 
@@ -146,16 +146,16 @@ export default function DashboardView({
                 <div className="dashboard-groups">
                     <AuditSection
                         audits={draftAudits}
-                        emptyMessage="Začni novou kontrolou a rozpracované věci se objeví tady."
-                        title="Rozpracované kontroly"
+                        emptyMessage="Začni nový rozbor a průběžně zaznamenané nálezy se objeví tady."
+                        title="Rozpracované rozbory"
                         onDeleteAudit={onDeleteAudit}
                         onOpenAudit={onOpenAudit}
                     />
 
                     <AuditSection
                         audits={finishedAudits}
-                        emptyMessage="Až kontrolu označíš jako hotovou, přesune se sem."
-                        title="Hotové kontroly"
+                        emptyMessage="Uzavřené rozbory zůstávají lokálně jako podklad pro finální doporučení."
+                        title="Uzavřené rozbory"
                         onDeleteAudit={onDeleteAudit}
                         onOpenAudit={onOpenAudit}
                     />

@@ -515,12 +515,19 @@ export function createDefaultAuditNotes() {
         houseManual: normalizeInstructionNoteValue('', 'house_manual'),
         internalCleaningInstructions: normalizeInstructionNoteValue('', 'housekeeping_instructions'),
         extraNotes: normalizeInstructionNoteValue('', 'other_notes'),
+        executiveSummary: '',
+        addressNow: '',
+        addressThisWeek: '',
+        structuralProblem: '',
+        finalReportNotes: '',
         recommendedSteps: '',
     }
 }
 
 export function normalizeAuditNotes(notes) {
     const safeNotes = notes && typeof notes === 'object' ? notes : {}
+    const legacyRecommendedSteps =
+        typeof safeNotes.recommendedSteps === 'string' ? safeNotes.recommendedSteps : ''
 
     return {
         checkinInstructions: normalizeInstructionNoteValue(
@@ -533,8 +540,15 @@ export function normalizeAuditNotes(notes) {
             'housekeeping_instructions',
         ),
         extraNotes: normalizeInstructionNoteValue(safeNotes.extraNotes, 'other_notes'),
-        recommendedSteps:
-            typeof safeNotes.recommendedSteps === 'string' ? safeNotes.recommendedSteps : '',
+        executiveSummary: typeof safeNotes.executiveSummary === 'string' ? safeNotes.executiveSummary : '',
+        addressNow:
+            typeof safeNotes.addressNow === 'string'
+                ? safeNotes.addressNow
+                : legacyRecommendedSteps,
+        addressThisWeek: typeof safeNotes.addressThisWeek === 'string' ? safeNotes.addressThisWeek : '',
+        structuralProblem: typeof safeNotes.structuralProblem === 'string' ? safeNotes.structuralProblem : '',
+        finalReportNotes: typeof safeNotes.finalReportNotes === 'string' ? safeNotes.finalReportNotes : '',
+        recommendedSteps: legacyRecommendedSteps,
     }
 }
 

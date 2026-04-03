@@ -37,11 +37,7 @@ function App() {
         const normalizedAudits = auditRows.map((audit) => normalizeAuditRecord(audit))
         const normalizedTemplates = templateRows.map((template) => normalizeTemplateRecord(template))
 
-        const changedAudits = normalizedAudits.filter(
-          (audit, index) =>
-            audit.inspectionTypeKey !== auditRows[index]?.inspectionTypeKey ||
-            audit.inspectionType !== auditRows[index]?.inspectionType,
-        )
+        const changedAudits = normalizedAudits.filter((audit, index) => audit !== auditRows[index])
 
         if (changedAudits.length > 0) {
           await db.audits.bulkPut(changedAudits)
@@ -75,7 +71,7 @@ function App() {
     )
 
     if (!template) {
-      throw new Error('Pro zvolený typ kontroly chybí šablona checklistu.')
+      throw new Error('Pro zvolený typ rozboru chybí šablona checklistu.')
     }
 
     setCreating(true)

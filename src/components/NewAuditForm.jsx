@@ -34,15 +34,15 @@ export default function NewAuditForm({ creating, onCancel, onCreate }) {
         try {
             await onCreate(formValues)
         } catch (createError) {
-            setError(createError.message || 'Nepodařilo se založit kontrolu.')
+            setError(createError.message || 'Nepodařilo se založit rozbor.')
         }
     }
 
     return (
         <section className="screen">
             <header className="panel form-panel">
-                <h1>Nová kontrola</h1>
-                <p className="muted">Vytvoř prázdnou kontrolu podle typu a ihned pokračuj do checklistu.</p>
+                <h1>Nový rozbor</h1>
+                <p className="muted">Vytvoř nový rozbor podle typu a hned pokračuj do sběru nálezů.</p>
             </header>
 
             <form className="panel form-panel" onSubmit={handleSubmit}>
@@ -80,11 +80,11 @@ export default function NewAuditForm({ creating, onCancel, onCreate }) {
                     </div>
 
                     <div className="field">
-                        <label htmlFor="inspectionType">Typ kontroly</label>
+                        <label htmlFor="inspectionType">Typ rozboru</label>
                         <select
                             id="inspectionType"
-                                value={formValues.inspectionTypeKey}
-                                onChange={(event) => updateField('inspectionTypeKey', event.target.value)}
+                            value={formValues.inspectionTypeKey}
+                            onChange={(event) => updateField('inspectionTypeKey', event.target.value)}
                         >
                             {INSPECTION_TYPE_OPTIONS.map((type) => (
                                 <option key={type.key} value={type.key}>
@@ -110,7 +110,7 @@ export default function NewAuditForm({ creating, onCancel, onCreate }) {
 
                 <div className="form-actions">
                     <button className="button" type="submit" disabled={creating}>
-                        {creating ? 'Vytvářím kontrolu...' : 'Vytvořit kontrolu'}
+                        {creating ? 'Vytvářím rozbor...' : 'Vytvořit rozbor'}
                     </button>
                     <button className="ghost-button" type="button" onClick={onCancel}>
                         Zpět na přehled

@@ -266,6 +266,11 @@
   background: rgba(198, 74, 74, 0.14);
 }
 
+.status-pill--na {
+  color: var(--text-soft);
+  background: rgba(53, 78, 89, 0.08);
+}
+
 .status-pill--low {
   color: var(--text-soft);
   background: rgba(53, 78, 89, 0.08);
@@ -332,6 +337,14 @@
 .instructions-grid {
   display: grid;
   gap: 14px;
+}
+
+.field-group,
+.chip-group,
+.summary-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .field {
@@ -464,6 +477,10 @@
   color: var(--text-strong);
 }
 
+.summary-list-meta {
+  margin-top: 10px;
+}
+
 .empty-state {
   text-align: center;
 }
@@ -548,6 +565,10 @@
   .instructions-grid .field,
   .summary-card--full {
     grid-column: 1 / -1;
+  }
+
+  .summary-metrics-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
